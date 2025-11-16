@@ -52,3 +52,14 @@ aliyun:
     bucket-name: ${ALIYUN_OSS_BUCKET:}
     access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
     access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
+# 日志配置
+logging:
+  level:
+    root: INFO
+
+# HTTP客户端配置
+http:
+  client:
+    ssl:
+      trust-all: true
+      hostname-verification: false
