@@ -9,7 +9,6 @@ import com.club.campusclubmanager.service.UserService;
 import com.club.campusclubmanager.vo.LoginResponse;
 import com.club.campusclubmanager.vo.UserInfoVO;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

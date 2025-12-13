@@ -35,8 +35,10 @@ public class SaTokenConfig implements WebMvcConfigurer, StpInterface {
                         "/user/register",
                         "/user/login",
                         "/doc.html/**",
+                        "/ai/**", 
                         "/v3/api-docs/**",
-                        "/swagger-ui/**"
+                        "/swagger-ui/**",
+                        "/v1/upload/**"  // 排除图片上传相关接口
                 );
     }
 
