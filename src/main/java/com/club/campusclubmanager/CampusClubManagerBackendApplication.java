@@ -38,14 +38,13 @@ public class CampusClubManagerBackendApplication {
         } catch (UnknownHostException e) {
             log.warn("The host name could not be determined, using `localhost` as fallback");
         }
-        log.info("""
-                        ----------------------------------------------------------
-                        \t应用程序“{}”正在运行中......
-                        \t接口文档访问 URL:
-                        \t本地: \t\t{}://localhost:{}{}
-                        \t外部: \t{}://{}:{}{}
-                        \t配置文件: \t{}
-                        ----------------------------------------------------------""",
+        log.info("\n----------------------------------------------------------" +
+                        "\n\t应用程序 {} 正在运行中......" +
+                        "\n\t接口文档访问 URL:" +
+                        "\n\t本地: \t\t{}://localhost:{}{}" +
+                        "\n\t外部: \t{}://{}:{}{}" +
+                        "\n\t配置文件: \t{}" +
+                        "\n----------------------------------------------------------",
                 env.getProperty("spring.application.name"),
                 protocol,
                 serverPort,

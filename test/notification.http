@@ -1,0 +1,142 @@
+### 通知API测试文件
+### 使用 VS Code REST Client 插件测试
+
+### 变量定义
+@baseUrl = http://localhost:8080/api
+@token = 
+
+### ============================================
+### 1. 登录获取 Token
+### ============================================
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+
+{
+  "username": "test_user",
+  "password": "123456"
+}
+
+### 复制返回的 token，替换上面的 @token 变量
+
+### ============================================
+### 2. 查询通知列表（分页）
+### ============================================
+GET {{baseUrl}}/notification/list?pageNum=1&pageSize=10
+Authorization: {{token}}
+
+### ============================================
+### 3. 查询通知列表（筛选未读）
+### ============================================
+GET {{baseUrl}}/notification/list?pageNum=1&pageSize=10&readFlag=false
+Authorization: {{token}}
+
+### ============================================
+### 4. 查询通知列表（按类型筛选）
+### ============================================
+GET {{baseUrl}}/notification/list?pageNum=1&pageSize=10&type=audit
+Authorization: {{token}}
+
+### ============================================
+### 5. 获取未读数量
+### ============================================
+GET {{baseUrl}}/notification/unread-count
+Authorization: {{token}}
+
+### ============================================
+### 6. 标记单条通知已读
+### ============================================
+PUT {{baseUrl}}/notification/mark-read
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "notificationId": 1,
+  "markAll": false
+}
+
+### ============================================
+### 7. 标记全部通知已读
+### ============================================
+PUT {{baseUrl}}/notification/mark-read
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "markAll": true
+}
+
+### ============================================
+### 8. 获取通知设置
+### ============================================
+GET {{baseUrl}}/notification/settings
+Authorization: {{token}}
+
+### ============================================
+### 9. 更新通知设置
+### ============================================
+PUT {{baseUrl}}/notification/settings
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "emailEnabled": true,
+  "inAppEnabled": true,
+  "auditNotification": true,
+  "activityNotification": true,
+  "clubNotification": true,
+  "systemNotification": true
+}
+
+### ============================================
+### 10. 禁用活动通知
+### ============================================
+PUT {{baseUrl}}/notification/settings
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "activityNotification": false
+}
+
+### ============================================
+### 11. 删除通知
+### ============================================
+DELETE {{baseUrl}}/notification/1
+Authorization: {{token}}
+
+### ============================================
+### 12. 测试：申请加入社团（会触发通知）
+### ============================================
+POST {{baseUrl}}/club/apply
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "clubId": 1,
+  "reason": "我想加入这个社团进行学习"
+}
+
+### ============================================
+### 13. 使用管理员账号审核申请（会触发通知给申请人）
+### ============================================
+### 先登录 club_admin
+POST {{baseUrl}}/user/login
+Content-Type: application/json
+
+{
+  "username": "club_admin",
+  "password": "123456"
+}
+
+### 复制返回的 adminToken，然后执行审核
+### PUT {{baseUrl}}/club/management/1/applications/review
+### Authorization: {{adminToken}}
+### Content-Type: application/json
+### 
+### {
+###   "applicationId": 1,
+###   "status": "approved",
+###   "reviewNote": "欢迎加入"
+### }
+
+

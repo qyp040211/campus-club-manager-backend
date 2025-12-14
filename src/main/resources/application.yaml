@@ -4,20 +4,39 @@ server:
     context-path: /api
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 200MB
+      enabled: true
   application:
     name: campus-club-manager-backend
-#  profiles:
-#    active: dev
+  profiles:
+    active: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/campus_club?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-    username: root
-    password: EhXzcR8iWSHjrXLn
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/campus_club?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
+    username: ${DATABASE_USERNAME:root}
+    password: ${DATABASE_PASSWORD:}  # 使用环境变量
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+    from: ${MAIL_FROM:noreply@campus-club.com}
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
@@ -32,7 +51,6 @@ mybatis-plus:
 
 sa-token:
   token-name: Authorization
-  token-prefix: Bearer
   is-print: false
   is-read-cookie: false
   timeout: 2592000
@@ -45,17 +63,34 @@ springdoc:
   swagger-ui:
     path: /doc.html
     tags-sorter: alpha
+  model-converters:
+    pageable-converter:
+      enabled: true
+  default-flat-param-object: true
+  packages-to-scan: com.club.campusclubmanager.controller
+  packages-to-exclude: com.baomidou.mybatisplus.extension.plugins.pagination
+  ignore-components:
+    - com.baomidou.mybatisplus.extension.plugins.pagination.Page
 
+# 使用环境变量
 aliyun:
   oss:
     endpoint: ${ALIYUN_OSS_ENDPOINT:}
     bucket-name: ${ALIYUN_OSS_BUCKET:}
     access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
     access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
+
+# 使用环境变量
+deepseek:
+  api:
+    key: ${DEEPSEEK_API_KEY:}
+    url: ${DEEPSEEK_API_URL:https://api.deepseek.com/v1/chat/completions}
+
 # 日志配置
 logging:
   level:
-    root: INFO
+    root: DEBUG
+    com.club.campusclubmanager: DEBUG
 
 # HTTP客户端配置
 http:

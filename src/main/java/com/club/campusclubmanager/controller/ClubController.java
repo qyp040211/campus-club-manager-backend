@@ -3,6 +3,7 @@ package com.club.campusclubmanager.controller;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.club.campusclubmanager.common.Result;
+import com.club.campusclubmanager.common.PageResult;
 import com.club.campusclubmanager.dto.ApplyJoinClubRequest;
 import com.club.campusclubmanager.service.ClubService;
 import com.club.campusclubmanager.vo.ClubApplicationVO;
@@ -34,13 +35,19 @@ public class ClubController {
      */
     @Operation(summary = "分页查询社团列表", description = "公开接口，支持关键词搜索")
     @GetMapping("/list")
-    public Result<Page<ClubVO>> listClubs(
+    public Result<PageResult<ClubVO>> listClubs(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") Integer pageSize,
             @Parameter(description = "搜索关键词") @RequestParam(required = false) String keyword
     ) {
         Page<ClubVO> page = clubService.listClubs(pageNum, pageSize, keyword);
-        return Result.success(page);
+        PageResult<ClubVO> result = new PageResult<>();
+        result.setRecords(page.getRecords());
+        result.setTotal(page.getTotal());
+        result.setSize(page.getSize());
+        result.setCurrent(page.getCurrent());
+        result.setPages(page.getPages());
+        return Result.success(result);
     }
 
     /**

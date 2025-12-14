@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.club.campusclubmanager.mapper.NotificationMapper">
+
+    <!-- 批量插入通知 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO notification (user_id, title, content, type, related_type, related_id, priority, read_flag, create_time, update_time)
+        VALUES
+        <foreach collection="notifications" item="item" separator=",">
+            (#{item.userId}, #{item.title}, #{item.content}, #{item.type}, #{item.relatedType}, #{item.relatedId}, #{item.priority}, #{item.readFlag}, NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <!-- 统计用户未读数量 -->
+    <select id="countUnread" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM notification
+        WHERE user_id = #{userId} AND read_flag = 0 AND is_deleted = 0
+    </select>
+
+    <!-- 标记用户所有通知为已读 -->
+    <update id="markAllAsRead">
+        UPDATE notification
+        SET read_flag = 1, read_time = NOW(), update_time = NOW()
+        WHERE user_id = #{userId} AND read_flag = 0 AND is_deleted = 0
+    </update>
+
+</mapper>
+
+
