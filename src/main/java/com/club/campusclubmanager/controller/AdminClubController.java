@@ -107,4 +107,31 @@ public class AdminClubController {
         clubService.removeClubLeader(clubId, userId);
         return Result.success("取消成功", null);
     }
+
+    /**
+     * 移除社团成员
+     */
+    @Operation(summary = "移除社团成员", description = "需要管理员权限，将指定成员从社团中移除")
+    @DeleteMapping("/{clubId}/member/{userId}")
+    public Result<Void> removeClubMember(
+            @Parameter(description = "社团ID") @PathVariable Long clubId,
+            @Parameter(description = "用户ID") @PathVariable Long userId
+    ) {
+        clubService.removeClubMember(clubId, userId);
+        return Result.success("移除成功", null);
+    }
+
+    /**
+     * 修改社团成员角色
+     */
+    @Operation(summary = "修改社团成员角色", description = "需要管理员权限，修改成员在社团中的角色")
+    @PutMapping("/{clubId}/member/{userId}/role")
+    public Result<Void> updateMemberRole(
+            @Parameter(description = "社团ID") @PathVariable Long clubId,
+            @Parameter(description = "用户ID") @PathVariable Long userId,
+            @Parameter(description = "新角色：member-普通成员, leader-负责人") @RequestParam String role
+    ) {
+        clubService.updateMemberRole(clubId, userId, role);
+        return Result.success("角色修改成功", null);
+    }
 }

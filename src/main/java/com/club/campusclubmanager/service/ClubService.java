@@ -98,4 +98,14 @@ public interface ClubService extends IService<Club> {
      * 更新社团信息（社团管理员）
      */
     void updateClubByLeader(Long clubId, UpdateClubRequest request);
+
+    /**
+     * 移除社团成员（管理员）
+     */
+    void removeClubMember(Long clubId, Long userId);
+
+    /**
+     * 修改社团成员角色（管理员）
+     */
+    void updateMemberRole(Long clubId, Long userId, String role);
 }

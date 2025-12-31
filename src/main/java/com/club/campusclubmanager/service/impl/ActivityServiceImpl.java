@@ -320,6 +320,177 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         activitySignupMapper.delete(wrapper);
     }
 
+    /**
+     * 创建活动（系统管理员）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void createActivityByAdmin(CreateActivityRequest request) {
+        Long userId = StpUtil.getLoginIdAsLong();
+
+        // 验证社团是否存在
+        Club club = clubMapper.selectById(request.getClubId());
+        if (club == null) {
+            throw new BusinessException(20101, "社团不存在");
+        }
+
+        // 验证时间合法性
+        if (request.getEndTime().isBefore(request.getStartTime())) {
+            throw new BusinessException(20102, "活动结束时间不能早于开始时间");
+        }
+
+        if (request.getSignupEndTime() != null && request.getSignupStartTime() != null) {
+            if (request.getSignupEndTime().isBefore(request.getSignupStartTime())) {
+                throw new BusinessException(20102, "报名截止时间不能早于报名开始时间");
+            }
+        }
+
+        // 创建活动（系统管理员创建的活动直接发布，无需审核）
+        Activity activity = new Activity();
+        BeanUtils.copyProperties(request, activity);
+        activity.setCreateUser(userId);
+        activity.setStatus(ActivityStatus.PUBLISHED); // 系统管理员创建直接发布
+        activity.setCurrentMembers(0);
+        this.save(activity);
+    }
+
+    /**
+     * 更新活动（系统管理员）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateActivityByAdmin(Long activityId, UpdateActivityRequest request) {
+        // 验证活动是否存在
+        Activity activity = this.getById(activityId);
+        if (activity == null) {
+            throw new BusinessException(20101, "活动不存在");
+        }
+
+        // 系统管理员可以修改任何状态的活动（除了已完成的）
+        if (activity.getStatus() == ActivityStatus.COMPLETED) {
+            throw new BusinessException(20103, "已完成的活动无法修改");
+        }
+
+        // 验证时间合法性
+        if (request.getEndTime() != null && request.getStartTime() != null) {
+            if (request.getEndTime().isBefore(request.getStartTime())) {
+                throw new BusinessException(20102, "活动结束时间不能早于开始时间");
+            }
+        }
+
+        // 更新活动信息（只更新非空字段）
+        if (request.getTitle() != null) activity.setTitle(request.getTitle());
+        if (request.getContent() != null) activity.setContent(request.getContent());
+        if (request.getCover() != null) activity.setCover(request.getCover());
+        if (request.getLocation() != null) activity.setLocation(request.getLocation());
+        if (request.getStartTime() != null) activity.setStartTime(request.getStartTime());
+        if (request.getEndTime() != null) activity.setEndTime(request.getEndTime());
+        if (request.getSignupStartTime() != null) activity.setSignupStartTime(request.getSignupStartTime());
+        if (request.getSignupEndTime() != null) activity.setSignupEndTime(request.getSignupEndTime());
+        if (request.getMaxMembers() != null) activity.setMaxMembers(request.getMaxMembers());
+
+        this.updateById(activity);
+    }
+
+    /**
+     * 取消活动（系统管理员）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelActivityByAdmin(Long activityId) {
+        // 验证活动是否存在
+        Activity activity = this.getById(activityId);
+        if (activity == null) {
+            throw new BusinessException(20101, "活动不存在");
+        }
+
+        // 已取消或已完成的活动无法再次取消
+        if (activity.getStatus() == ActivityStatus.CANCELLED) {
+            throw new BusinessException(20103, "活动已被取消");
+        }
+        if (activity.getStatus() == ActivityStatus.COMPLETED) {
+            throw new BusinessException(20103, "活动已完成，无法取消");
+        }
+
+        // 更新活动状态为已取消
+        activity.setStatus(ActivityStatus.CANCELLED);
+        this.updateById(activity);
+
+        // 将所有已报名未取消的报名记录状态更新为已取消
+        LambdaQueryWrapper<ActivitySignup> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ActivitySignup::getActivityId, activityId)
+                .eq(ActivitySignup::getStatus, SignupStatus.REGISTERED);
+        List<ActivitySignup> signups = activitySignupMapper.selectList(wrapper);
+        for (ActivitySignup signup : signups) {
+            signup.setStatus(SignupStatus.CANCELLED);
+            activitySignupMapper.updateById(signup);
+        }
+    }
+
+    /**
+     * 查看活动报名列表（系统管理员）
+     */
+    @Override
+    public Page<ActivitySignupVO> getActivitySignupsByAdmin(Long activityId, Integer pageNum, Integer pageSize) {
+        // 验证活动是否存在
+        Activity activity = this.getById(activityId);
+        if (activity == null) {
+            throw new BusinessException(20101, "活动不存在");
+        }
+
+        // 查询报名列表（系统管理员可以查看任何活动的报名列表）
+        LambdaQueryWrapper<ActivitySignup> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ActivitySignup::getActivityId, activityId)
+                .orderByDesc(ActivitySignup::getSignupTime);
+
+        Page<ActivitySignup> page = new Page<>(pageNum, pageSize);
+        page = activitySignupMapper.selectPage(page, wrapper);
+
+        // 转换为VO
+        Page<ActivitySignupVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        List<ActivitySignupVO> voList = page.getRecords().stream()
+                .map(this::convertToActivitySignupVO)
+                .collect(Collectors.toList());
+        voPage.setRecords(voList);
+        return voPage;
+    }
+
+    /**
+     * 活动签到/标记缺席（系统管理员）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void checkinActivityByAdmin(Long activityId, CheckinRequest request) {
+        // 验证活动是否存在
+        Activity activity = this.getById(activityId);
+        if (activity == null) {
+            throw new BusinessException(20101, "活动不存在");
+        }
+
+        // 验证操作类型
+        if (!"check_in".equals(request.getAction()) && !"absent".equals(request.getAction())) {
+            throw new BusinessException(20104, "无效的操作类型");
+        }
+
+        // 批量更新报名状态（系统管理员可以对任何活动进行签到操作）
+        for (Long signupUserId : request.getUserIds()) {
+            LambdaQueryWrapper<ActivitySignup> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(ActivitySignup::getActivityId, activityId)
+                    .eq(ActivitySignup::getUserId, signupUserId);
+            ActivitySignup signup = activitySignupMapper.selectOne(wrapper);
+
+            if (signup != null && signup.getStatus() == SignupStatus.REGISTERED) {
+                if ("check_in".equals(request.getAction())) {
+                    signup.setStatus(SignupStatus.CHECKED_IN);
+                    signup.setCheckinTime(LocalDateTime.now());
+                } else {
+                    signup.setStatus(SignupStatus.ABSENT);
+                }
+                activitySignupMapper.updateById(signup);
+            }
+        }
+    }
+
     // ==================== 学生端操作 ====================
 
     /**
@@ -538,9 +709,15 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     // ==================== 辅助方法 ====================
 
     /**
-     * 验证用户是否为社团负责人
+     * 验证用户是否为社团负责人或系统管理员
      */
     private void verifyClubLeader(Long clubId, Long userId) {
+        // 系统管理员拥有所有权限，无需验证社团负责人身份
+        if (StpUtil.hasRole("system_admin")) {
+            return;
+        }
+
+        // 普通用户需要验证是否为该社团的负责人
         LambdaQueryWrapper<ClubMember> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClubMember::getClubId, clubId)
                 .eq(ClubMember::getUserId, userId)

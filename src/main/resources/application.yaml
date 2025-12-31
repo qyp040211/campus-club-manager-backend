@@ -15,19 +15,19 @@ spring:
     active: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/campus_club?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
-    username: ${DATABASE_USERNAME:root}
-    password: ${DATABASE_PASSWORD:}  # 使用环境变量
+    url: ${spring.datasource.url}
+    username: ${spring.datasource.username}
+    password: ${spring.datasource.password}
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
   mail:
-    host: ${MAIL_HOST:smtp.qq.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    host: ${spring.mail.host}
+    port: ${spring.mail.port}
+    username: ${spring.mail.username}
+    password: ${spring.mail.password}
     default-encoding: UTF-8
     properties:
       mail:
@@ -36,7 +36,9 @@ spring:
           starttls:
             enable: true
             required: true
-    from: ${MAIL_FROM:noreply@campus-club.com}
+    from: ${spring.mail.from}
+
+
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
@@ -56,6 +58,7 @@ sa-token:
   timeout: 2592000
   active-timeout: -1
   is-concurrent: true
+  token-prefix: Bearer
 
 springdoc:
   api-docs:
@@ -72,27 +75,23 @@ springdoc:
   ignore-components:
     - com.baomidou.mybatisplus.extension.plugins.pagination.Page
 
-# 使用环境变量
 aliyun:
   oss:
-    endpoint: ${ALIYUN_OSS_ENDPOINT:}
-    bucket-name: ${ALIYUN_OSS_BUCKET:}
-    access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
-    access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
+    endpoint: ${aliyun.oss.endpoint}
+    bucket-name: ${aliyun.oss.bucket-name}
+    access-key-id: ${aliyun.oss.access-key-id}
+    access-key-secret: ${aliyun.oss.access-key-secret}
 
-# 使用环境变量
 deepseek:
   api:
-    key: ${DEEPSEEK_API_KEY:}
-    url: ${DEEPSEEK_API_URL:https://api.deepseek.com/v1/chat/completions}
+    key: ${deepseek.api.key}
+    url: ${deepseek.api.url:https://api.deepseek.com/v1/chat/completions}
 
-# 日志配置
 logging:
   level:
-    root: DEBUG
-    com.club.campusclubmanager: DEBUG
+    root: INFO
+    com.club.campusclubmanager: INFO
 
-# HTTP客户端配置
 http:
   client:
     ssl:

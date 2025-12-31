@@ -62,6 +62,31 @@ public interface ActivityService extends IService<Activity> {
      */
     void deleteActivity(Long activityId);
 
+    /**
+     * 创建活动（系统管理员）
+     */
+    void createActivityByAdmin(CreateActivityRequest request);
+
+    /**
+     * 更新活动（系统管理员）
+     */
+    void updateActivityByAdmin(Long activityId, UpdateActivityRequest request);
+
+    /**
+     * 取消活动（系统管理员）
+     */
+    void cancelActivityByAdmin(Long activityId);
+
+    /**
+     * 查看活动报名列表（系统管理员）
+     */
+    Page<ActivitySignupVO> getActivitySignupsByAdmin(Long activityId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 活动签到/标记缺席（系统管理员）
+     */
+    void checkinActivityByAdmin(Long activityId, CheckinRequest request);
+
     // ==================== 学生端操作 ====================
 
     /**

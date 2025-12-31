@@ -15,6 +15,7 @@ import com.club.campusclubmanager.entity.User;
 import com.club.campusclubmanager.enums.ApplicationStatus;
 import com.club.campusclubmanager.enums.ClubStatus;
 import com.club.campusclubmanager.enums.MemberRole;
+import com.club.campusclubmanager.enums.UserRole;
 import com.club.campusclubmanager.exception.BusinessException;
 import com.club.campusclubmanager.mapper.ClubApplicationMapper;
 import com.club.campusclubmanager.mapper.ClubMapper;
@@ -555,7 +556,7 @@ public class ClubServiceImpl extends ServiceImpl<ClubMapper, Club> implements Cl
     public Page<ClubApplicationVO> getClubPendingApplications(Long clubId, Integer pageNum, Integer pageSize) {
         Long userId = StpUtil.getLoginIdAsLong();
 
-        // 验证用户是否为该社团的负责人
+        // 验证用户是否为该社团的负责人或管理员
         verifyClubLeader(clubId, userId);
 
         // 查询该社团的待审核申请
@@ -674,7 +675,7 @@ public class ClubServiceImpl extends ServiceImpl<ClubMapper, Club> implements Cl
     }
 
     /**
-     * 验证用户是否为指定社团的负责人
+     * 验证用户是否为指定社团的负责人或系统管理员
      */
     private void verifyClubLeader(Long clubId, Long userId) {
         // 检查社团是否存在
@@ -683,7 +684,12 @@ public class ClubServiceImpl extends ServiceImpl<ClubMapper, Club> implements Cl
             throw new BusinessException(10201, "社团不存在");
         }
 
-        // 检查用户是否是该社团的负责人
+        // 系统管理员拥有所有权限，无需验证社团负责人身份
+        if (StpUtil.hasRole("system_admin")) {
+            return;
+        }
+
+        // 普通用户需要验证是否为该社团的负责人
         LambdaQueryWrapper<ClubMember> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClubMember::getClubId, clubId)
                .eq(ClubMember::getUserId, userId)
@@ -693,5 +699,78 @@ public class ClubServiceImpl extends ServiceImpl<ClubMapper, Club> implements Cl
         if (member == null) {
             throw new BusinessException(10210, "您不是该社团的负责人，无权进行此操作");
         }
+    }
+
+    /**
+     * 移除社团成员（管理员）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeClubMember(Long clubId, Long userId) {
+        // 检查社团是否存在
+        Club club = this.getById(clubId);
+        if (club == null) {
+            throw new BusinessException(10201, "社团不存在");
+        }
+
+        // 检查用户是否存在
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(10101, "用户不存在");
+        }
+
+        // 检查用户是否是社团成员
+        LambdaQueryWrapper<ClubMember> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ClubMember::getClubId, clubId)
+               .eq(ClubMember::getUserId, userId);
+        ClubMember member = clubMemberMapper.selectOne(wrapper);
+
+        if (member == null) {
+            throw new BusinessException(10202, "该用户不是社团成员");
+        }
+
+        // 删除成员关系
+        clubMemberMapper.deleteById(member.getId());
+
+
+        this.updateById(club);
+    }
+
+    /**
+     * 修改社团成员角色（管理员）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateMemberRole(Long clubId, Long userId, String role) {
+        // 检查社团是否存在
+        Club club = this.getById(clubId);
+        if (club == null) {
+            throw new BusinessException(10201, "社团不存在");
+        }
+
+        // 检查用户是否存在
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(10101, "用户不存在");
+        }
+
+        // 验证角色参数
+        if (!"member".equals(role) && !"leader".equals(role)) {
+            throw new BusinessException(10001, "角色参数错误，只能是member或leader");
+        }
+
+        // 检查用户是否是社团成员
+        LambdaQueryWrapper<ClubMember> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ClubMember::getClubId, clubId)
+               .eq(ClubMember::getUserId, userId);
+        ClubMember member = clubMemberMapper.selectOne(wrapper);
+
+        if (member == null) {
+            throw new BusinessException(10202, "该用户不是社团成员");
+        }
+
+        // 更新成员角色
+        member.setRole(MemberRole.fromCode(role));
+        clubMemberMapper.updateById(member);
     }
 }

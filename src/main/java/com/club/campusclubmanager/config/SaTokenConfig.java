@@ -7,7 +7,12 @@ import com.club.campusclubmanager.entity.User;
 import com.club.campusclubmanager.enums.UserRole;
 import com.club.campusclubmanager.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -23,6 +28,34 @@ public class SaTokenConfig implements WebMvcConfigurer, StpInterface {
 
     private final UserService userService;
 
+//    /**
+//     * 配置CORS跨域
+//     */
+//    @Override
+//    public void addCorsMappings(CorsRegistry registry) {
+//        registry.addMapping("/**")
+//                .allowedOriginPatterns("*") // 允许所有来源，生产环境建议指定具体域名
+//                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+//                .allowedHeaders("*")
+//                .allowCredentials(true)
+//                .maxAge(3600);
+//    }
+
+
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.addAllowedOriginPattern("*");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return new CorsFilter(source);
+    }
+
     /**
      * 注册Sa-Token拦截器
      * 注意：由于context-path已设置为/api，这里的路径不包含/api前缀
@@ -35,10 +68,13 @@ public class SaTokenConfig implements WebMvcConfigurer, StpInterface {
                         "/user/register",
                         "/user/login",
                         "/doc.html/**",
-                        "/ai/**", 
+                        "/ai/**",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
-                        "/v1/upload/**"  // 排除图片上传相关接口
+                        "/v1/upload/**" ,
+                        "/**/*.css",
+                        "/**/*.js",
+                        "/**/*.html"// 排除图片上传相关接口
                 );
     }
 
